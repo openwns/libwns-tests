@@ -1,0 +1,6 @@
+*.output
+output*
+stderr
+stdout
+stderr.log
+stdout.log
