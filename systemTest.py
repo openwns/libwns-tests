@@ -22,8 +22,6 @@ testSuite.addTest(pywns.WNSUnit.SystemTestSuite(sandboxPath = os.path.join('..',
 
 
 for i in range(1, 7):
-    print i
-
     testSuite.addTest(pywns.WNSUnit.SystemTestSuite(sandboxPath = os.path.join('..', '..', '..', 'sandbox'),
                                     configFile = 'MM1Step' + str(i) + '.py',
                                     shortDescription = 'MM1 queuing system example',
