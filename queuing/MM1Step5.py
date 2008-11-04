@@ -8,7 +8,9 @@ import openwns
 # "SimpleMM1" which is used in this example
 import openwns.queuingsystem
 
-import openwns.probebus
+# openwns.evaluation contains the classes requiered to set up
+# measurement probing
+import openwns.evaluation
 
 ### Simulation setup
 #
@@ -25,27 +27,6 @@ import openwns.probebus
 #             ----
 #
 
-class StatisticsProbeBus(openwns.probebus.PythonProbeBus):
-
-    def __init__(self, outputFilename):
-        openwns.probebus.PythonProbeBus.__init__(self, self.accepts, self.onMeasurement, self.output)
-        self.outputFilename = outputFilename
-        self.sum = 0.0
-        self.trials = 0
-
-    def accepts(self, time, context):
-        return True
-
-    def onMeasurement(self, time, measurement, context):
-        self.sum += measurement
-        self.trials += 1
-
-    def output(self):
-        f = open(self.outputFilename, "w")
-        f.write("Number of trials: %s\n" % str(self.trials))
-        f.write("Mean value : %s\n" % str(self.sum/self.trials))
-        f.close()
-
 # create the M/M/1 (step4) simulation model configuration (time in seconds)
 # we reuse step3 and only change the configuration!
 mm1 = openwns.queuingsystem.SimpleMM1Step5(meanJobInterArrivalTime = 0.100,
@@ -53,8 +34,6 @@ mm1 = openwns.queuingsystem.SimpleMM1Step5(meanJobInterArrivalTime = 0.100,
 
 # Replace the default LoggingProbeBus configured in SimpleMM1Step3 by
 # our StatisticsProbeBus
-statisticsProbeBus = StatisticsProbeBus("SimpleMM1Step5.output")
-loggingProbeBus = openwns.probebus.LoggingProbeBus()
 
 # create simulator configuration
 sim = openwns.Simulator(simulationModel = mm1,
@@ -67,11 +46,40 @@ sim.eventSchedulerMonitor = None
 # be ranamed 
 sim.outputStrategy = openwns.simulator.OutputStrategy.DELETE
 
-pbr = sim.environment.probeBusRegistry
+# The name of the measurement source we want to configure
+sourceName = 'SojournTime'
+# Get the root of the SojournTime Probe Bus
+node = openwns.evaluation.createSourceNode(sim, sourceName)
+# We create a Probe Bus that looks like this:
+#                                          /=>EnumeratedSeparator(lowPriority)=>Moments=>PDF
+# MeasurementSource=>SettlingTimeGuard=>PDF=
+#                                          \=>EnumeratedSeparator(highPriority)=>Moments=>PDF
 
-pbr.getMeasurementSource("openwns.queuingsystem.MM1.sojournTime").addObserver(statisticsProbeBus)
 
-pbr.getMeasurementSource("openwns.queuingsystem.MM1.sojournTime").addObserver(loggingProbeBus)
+# The SettlingTimeGuard does not let measurements pass before the simulation time given
+# as a parameter is passed. It is used to assure probing starts when stationary phase
+# is reached
+node.getLeafs().appendChildren(openwns.evaluation.generators.SettlingTimeGuard(5.0))
+
+# This PDF probes values for high and low priority jobs. 
+node.getLeafs().appendChildren(
+    openwns.evaluation.generators.PDF(minXValue = 0.0, maxXValue = 5.0, resolution = 5000))
+
+# The Enumarated Separator splits the ProbeBus by a given Context. Numeric context values can
+# be mapped on descriptive strings
+node.getLeafs().appendChildren(
+     openwns.evaluation.generators.Enumerated(
+            by='priority', keys=[0,1], names=['lowPriority', 'highPriority'], format='%s'))
+
+# The Moments probe bus does some basic statistical evaluation
+node.getLeafs().appendChildren(openwns.evaluation.generators.Moments())
+
+# The PDF Probe Bus collects the probability density function 
+# The parameters are the minimum, the maximum and the number of bins in
+# between. Here it is between 0 and 5 seconds with resolution of 1ms
+node.getLeafs().appendChildren(
+    openwns.evaluation.generators.PDF(minXValue = 0.0, maxXValue = 5.0, resolution = 5000))
+
 
 # set the configuration for this simulation
 openwns.setSimulator(sim)

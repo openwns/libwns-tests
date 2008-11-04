@@ -61,6 +61,6 @@ node.getLeafs().appendChildren(openwns.evaluation.generators.SettlingTimeGuard(5
 node.getLeafs().appendChildren(openwns.evaluation.generators.Moments())
 # The PDF Probe Bus collects the probability density function 
 # The parameters are the minimum, the maximum and the number of bins in
-# between.
+# between. Here it is between 0 and 5 seconds with resolution of 1ms
 node.getLeafs().appendChildren(
-    openwns.evaluation.generators.PDF(minXValue = 0.0, maxXValue = 1000.0, resolution = 1000))
+    openwns.evaluation.generators.PDF(minXValue = 0.0, maxXValue = 5.0, resolution = 5000))
