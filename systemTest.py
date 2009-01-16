@@ -17,15 +17,20 @@ testSuite = pywns.WNSUnit.TestSuite()
 testSuite.addTest(pywns.WNSUnit.SystemTestSuite(sandboxPath = os.path.join('..', '..', '..', 'sandbox'),
                             configFile = 'MM1realtime.py',
                             shortDescription = 'MM1 queuing system example',
-			    workingDir = 'queuing',
+                            workingDir = 'queuing',
                             disabled = False, disabledReason = ""))
 
+testSuite.addTest(pywns.WNSUnit.SystemTestSuite(sandboxPath = os.path.join('..', '..', '..', 'sandbox'),
+                            configFile = 'GGn.py',
+                            shortDescription = 'G/G/n configured as M/D/24',
+                            workingDir = 'queuing',
+                            disabled = False, disabledReason = ""))
 
 for i in range(1, 7):
     testSuite.addTest(pywns.WNSUnit.SystemTestSuite(sandboxPath = os.path.join('..', '..', '..', 'sandbox'),
                                     configFile = 'MM1Step' + str(i) + '.py',
                                     shortDescription = 'MM1 queuing system example',
-				    workingDir = 'queuing',
+                                    workingDir = 'queuing',
                                     disabled = False, disabledReason = ""))
 
 if __name__ == '__main__':
